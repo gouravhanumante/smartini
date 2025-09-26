@@ -3,11 +3,12 @@ package com.dailyrounds.quizapp.ui.screen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.dailyrounds.quizapp.ui.theme.AppTheme
 import com.dailyrounds.quizapp.ui.theme.ButtonStore
 import com.dailyrounds.quizapp.viewmodel.QuestionViewModel
 
 @Composable
-fun SkipSection(viewModel: QuestionViewModel) {
+fun SkipSection(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
     val uiState by viewModel.uiState.collectAsState()
     if (!uiState.skipButtonClicked && uiState.selectedAnswer == null) {
 

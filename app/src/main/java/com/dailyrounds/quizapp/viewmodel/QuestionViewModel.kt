@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dailyrounds.quizapp.data.Question
 import com.dailyrounds.quizapp.repository.QuestionRepository
+import com.dailyrounds.quizapp.ui.QuestionUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,21 +15,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-data class QuestionUiState(
-    val result: com.dailyrounds.quizapp.network.Result<List<Question>> = com.dailyrounds.quizapp.network.Result.Loading,
-    val currentQuestionIndex: Int = 0,
-    val selectedAnswer: Int? = null,
-    val answerShown: Boolean = false,
-    val score: Int = 0,
-    val skipButtonClicked: Boolean = false,
-    val reachedViaSkip: Boolean = false,
-    val animationDirection: AnimationDirection = AnimationDirection.NONE,
-    val dragOffset: Float = 0f,
-    val isDragging: Boolean = false,
-    val currentStreak: Int = 0,
-    val highestStreak: Int = 0,
-    val skippedQuestions: Int = 0
-)
 
 enum class AnimationDirection {
     NONE, FORWARD, BACKWARD
@@ -44,6 +31,7 @@ class QuestionViewModel @Inject constructor(
     private var currentPage = 0
     private var totalPages = 1
     private val currentQuestions = mutableListOf<Question>()
+    private var timerJob: kotlinx.coroutines.Job? = null
 
     init {
         loadQuestions()
@@ -51,7 +39,8 @@ class QuestionViewModel @Inject constructor(
 
     fun loadQuestions() {
         viewModelScope.launch {
-            _uiState.value = QuestionUiState(result = com.dailyrounds.quizapp.network.Result.Loading)
+            _uiState.value =
+                QuestionUiState(result = com.dailyrounds.quizapp.network.Result.Loading)
 
             try {
                 val questionsState = withContext(Dispatchers.IO) {
@@ -67,8 +56,11 @@ class QuestionViewModel @Inject constructor(
                     currentQuestions.clear()
                     currentQuestions.addAll(questionResponse.questions)
 
-                    _uiState.value =
-                        QuestionUiState(result = com.dailyrounds.quizapp.network.Result.Success(currentQuestions.toList()))
+                    _uiState.value = QuestionUiState(
+                        result = com.dailyrounds.quizapp.network.Result.Success(
+                            currentQuestions.toList()
+                        )
+                    )
 
                     if (questionResponse.hasMore) {
                         preloadRemainingQuestions()
@@ -78,8 +70,11 @@ class QuestionViewModel @Inject constructor(
                 }
 
             } catch (e: Exception) {
-                _uiState.value =
-                    QuestionUiState(result = com.dailyrounds.quizapp.network.Result.Error(e.message ?: "An exception occurred"))
+                _uiState.value = QuestionUiState(
+                    result = com.dailyrounds.quizapp.network.Result.Error(
+                        e.message ?: "An exception occurred"
+                    )
+                )
             }
         }
     }
@@ -104,7 +99,7 @@ class QuestionViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
             }
-        //do nothing its background call in error casw
+            //do nothing its background call in error casw
         }
     }
 
@@ -119,21 +114,28 @@ class QuestionViewModel @Inject constructor(
         val isCorrect = currentQuestion?.correctOptionIndex == optionIndex
         val newScore = if (isCorrect) currentState.score + 1 else currentState.score
 
+        val previousStreak = currentState.currentStreak
         val newCurrentStreak = if (isCorrect) currentState.currentStreak + 1 else 0
         val newHighestStreak = maxOf(currentState.highestStreak, newCurrentStreak)
 
+        stopTimer()
         _uiState.value = currentState.copy(
             selectedAnswer = optionIndex,
             answerShown = true,
             score = newScore,
             currentStreak = newCurrentStreak,
-            highestStreak = newHighestStreak
+            previousStreak = previousStreak,
+            highestStreak = newHighestStreak,
+            timerActive = false
         )
     }
 
     fun nextQuestion() {
         val currentState = _uiState.value
-        val questions = (currentState.result as? com.dailyrounds.quizapp.network.Result.Success)?.data ?: return
+        val questions =
+            (currentState.result as? com.dailyrounds.quizapp.network.Result.Success)?.data ?: return
+
+        stopTimer()
 
         if (currentState.currentQuestionIndex < questions.size - 1) {
             _uiState.value = currentState.copy(
@@ -142,8 +144,11 @@ class QuestionViewModel @Inject constructor(
                 answerShown = false,
                 skipButtonClicked = false,
                 reachedViaSkip = currentState.skipButtonClicked,
-                animationDirection = AnimationDirection.FORWARD
+                animationDirection = AnimationDirection.FORWARD,
+                timeRemaining = 15,
+                timerActive = true
             )
+            startTimer()
         } else {
             _uiState.value = currentState.copy(
                 currentQuestionIndex = questions.size,
@@ -151,7 +156,9 @@ class QuestionViewModel @Inject constructor(
                 answerShown = false,
                 skipButtonClicked = false,
                 reachedViaSkip = false,
-                animationDirection = AnimationDirection.FORWARD
+                animationDirection = AnimationDirection.FORWARD,
+                timeRemaining = 15,
+                timerActive = false
             )
         }
     }
@@ -159,9 +166,9 @@ class QuestionViewModel @Inject constructor(
 
     fun skipQuestion() {
         val currentState = _uiState.value
+        stopTimer()
         _uiState.value = currentState.copy(
-            skipButtonClicked = true,
-            skippedQuestions = currentState.skippedQuestions + 1
+            skipButtonClicked = true, skippedQuestions = currentState.skippedQuestions + 1
         )
         nextQuestion()
     }
@@ -169,6 +176,7 @@ class QuestionViewModel @Inject constructor(
     fun undoSkip() {
         val currentState = _uiState.value
         if (currentState.currentQuestionIndex > 0) {
+            stopTimer()
             _uiState.value = currentState.copy(
                 currentQuestionIndex = currentState.currentQuestionIndex - 1,
                 selectedAnswer = null,
@@ -176,8 +184,11 @@ class QuestionViewModel @Inject constructor(
                 skipButtonClicked = false,
                 reachedViaSkip = false,
                 animationDirection = AnimationDirection.BACKWARD,
-                skippedQuestions = currentState.skippedQuestions - 1
+                skippedQuestions = currentState.skippedQuestions - 1,
+                timeRemaining = 15,
+                timerActive = true
             )
+            startTimer()
         }
     }
 
@@ -215,30 +226,65 @@ class QuestionViewModel @Inject constructor(
         return _uiState.value.skippedQuestions
     }
 
+    fun resetAnimationDirection() {
+        val currentState = _uiState.value
+        _uiState.value = currentState.copy(animationDirection = AnimationDirection.NONE)
+    }
+
+    fun startQuiz() {
+        val currentState = _uiState.value
+        _uiState.value = currentState.copy(
+            timerActive = true, timeRemaining = 15
+        )
+        startTimer()
+    }
+
     fun restartQuiz() {
         repository.clearCache()
         currentPage = 0
         totalPages = 1
         currentQuestions.clear()
+        stopTimer()
         _uiState.value = QuestionUiState()
         loadQuestions()
     }
 
-    fun updateDragOffset(offset: Float) {
-        _uiState.value = _uiState.value.copy(dragOffset = offset)
+    private fun startTimer() {
+        stopTimer()
+        timerJob = viewModelScope.launch {
+            while (_uiState.value.timeRemaining > 0 && _uiState.value.timerActive) {
+                delay(1000)
+                val currentState = _uiState.value
+                if (currentState.timerActive) {
+                    val newTimeRemaining = currentState.timeRemaining - 1
+                    _uiState.value = currentState.copy(timeRemaining = newTimeRemaining)
+
+                    if (newTimeRemaining <= 0) {
+                        autoSkipQuestion()
+                    }
+                }
+            }
+        }
     }
 
-    fun startDragging() {
-        _uiState.value = _uiState.value.copy(isDragging = true)
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
     }
 
-    fun stopDragging() {
-        _uiState.value = _uiState.value.copy(isDragging = false)
+    private fun autoSkipQuestion() {
+        val currentState = _uiState.value
+        _uiState.value = currentState.copy(
+            skipButtonClicked = true,
+            skippedQuestions = currentState.skippedQuestions + 1,
+            timerActive = false
+        )
+        nextQuestion()
     }
 
-    fun snapBack() {
-        _uiState.value = _uiState.value.copy(dragOffset = 0f, isDragging = false)
+    override fun onCleared() {
+        super.onCleared()
+        stopTimer()
     }
-
 
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.dailyrounds.quizapp.ui.theme.AppTheme
 
 @Composable
 fun OptionItem(
@@ -21,6 +22,7 @@ fun OptionItem(
     isSelected: Boolean,
     isCorrect: Boolean,
     isInCorrect: Boolean,
+    selectedTheme: AppTheme,
     onClick: () -> Unit
 ) {
 
