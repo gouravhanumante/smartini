@@ -5,7 +5,9 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -208,31 +209,26 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
                         translationX = slideOffset,
                         alpha = if (slideOffset != 0f) 0.7f else 1f
                     )
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragEnd = {
-                                if (kotlin.math.abs(dragDistance) > swipeThreshold) {
-                                    if (dragDistance > 0) {
-                                        if (uiState.reachedViaSkip && uiState.currentQuestionIndex > 0) {
-                                            viewModel.undoSkip()
-                                        }
-                                    } else {
-                                        if (!uiState.answerShown) {
-                                            viewModel.skipQuestion()
-                                        }
+                    .draggable(
+                        orientation = Orientation.Horizontal,
+                        state = rememberDraggableState { delta ->
+                            dragDistance += delta
+                        },
+                        onDragStopped = {
+                            if (kotlin.math.abs(dragDistance) > swipeThreshold) {
+                                if (dragDistance > 0) {
+                                    if (uiState.reachedViaSkip && uiState.currentQuestionIndex > 0) {
+                                        viewModel.undoSkip()
+                                    }
+                                } else {
+                                    if (!uiState.answerShown) {
+                                        viewModel.skipQuestion()
                                     }
                                 }
-                                dragDistance = 0f
                             }
-                        ) { change, _ ->
-                            val deltaX = change.position.x - change.previousPosition.x
-                            val deltaY = change.position.y - change.previousPosition.y
-
-                            if (kotlin.math.abs(deltaX) > kotlin.math.abs(deltaY) * 2f) {
-                                dragDistance += deltaX
-                            }
+                            dragDistance = 0f
                         }
-                    },
+                    ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface,
