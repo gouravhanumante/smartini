@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.dailyrounds.quizapp.data.Question
 import com.dailyrounds.quizapp.ui.components.StreakSection
 import com.dailyrounds.quizapp.ui.components.Timer
 import com.dailyrounds.quizapp.ui.theme.AppTheme
@@ -129,7 +131,17 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
                     }
                 }
 
-                Timer(uiState.timeRemaining)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.FastForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .clickable(enabled = !uiState.answerShown) { viewModel.skipQuestion() }
+                            .padding(end = 8.dp)
+                    )
+                    Timer(uiState.timeRemaining)
+                }
             }
 
             val totalQuestions = viewModel.getTotalQuestions()
@@ -186,7 +198,7 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
             )
 
             val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-            val padding = if (isLandscape) 100.dp else 12.dp
+            val padding = if (isLandscape) 24.dp else 12.dp
 
             Card(
                 Modifier
@@ -198,7 +210,7 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
                     )
                     .pointerInput(Unit) {
                         detectDragGestures(
-                            onDragEnd = { 
+                            onDragEnd = {
                                 if (kotlin.math.abs(dragDistance) > swipeThreshold) {
                                     if (dragDistance > 0) {
                                         if (uiState.reachedViaSkip && uiState.currentQuestionIndex > 0) {
@@ -215,7 +227,7 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
                         ) { change, _ ->
                             val deltaX = change.position.x - change.previousPosition.x
                             val deltaY = change.position.y - change.previousPosition.y
-                            
+
                             if (kotlin.math.abs(deltaX) > kotlin.math.abs(deltaY) * 2f) {
                                 dragDistance += deltaX
                             }
@@ -228,32 +240,37 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                ) {
-                    Text(
-                        text = currentQuestion.question,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 24.dp)
-                    )
+                if (!isLandscape) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
 
-                    currentQuestion.options.forEachIndexed { index, option ->
-                        OptionItem(
-                            text = option,
-                            isSelected = uiState.selectedAnswer == index,
-                            isCorrect = uiState.answerShown && index == currentQuestion.correctOptionIndex,
-                            isInCorrect = uiState.answerShown && index != currentQuestion.correctOptionIndex && uiState.selectedAnswer == index,
-                            selectedTheme = selectedTheme,
-                            onClick = {
-                                if (!uiState.answerShown) {
-                                    viewModel.selectAnswer(index)
-                                }
-                            }
-                        )
+                    ) {
+                        QuestionUI(currentQuestion)
+                        OptionsUI(currentQuestion, viewModel, selectedTheme)
+
+                    }
+                } else {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
+                        ) {
+                            QuestionUI(currentQuestion)
+                        }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 8.dp)
+                        ) {
+                            OptionsUI(currentQuestion, viewModel, selectedTheme)
+                        }
                     }
                 }
             }
@@ -265,18 +282,36 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
             )
 
             Spacer(modifier = Modifier.height(80.dp))
-
         }
+    }
+}
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(16.dp)
-        ) {
-            SkipSection(viewModel, selectedTheme)
-        }
+@Composable
+fun QuestionUI(currentQuestion: Question) {
+    Text(
+        text = currentQuestion.question,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(bottom = 24.dp)
+    )
+}
 
+@Composable
+fun OptionsUI(currentQuestion: Question, viewmodel: QuestionViewModel, selectedTheme: AppTheme) {
+    val uiState by viewmodel.uiState.collectAsState()
+    currentQuestion.options.forEachIndexed { index, option ->
+        OptionItem(
+            text = option,
+            isSelected = uiState.selectedAnswer == index,
+            isCorrect = uiState.answerShown && index == currentQuestion.correctOptionIndex,
+            isInCorrect = uiState.answerShown && index != currentQuestion.correctOptionIndex && uiState.selectedAnswer == index,
+            selectedTheme = selectedTheme,
+            onClick = {
+                if (!uiState.answerShown) {
+                    viewmodel.selectAnswer(index)
+                }
+            }
+        )
     }
 }
