@@ -37,8 +37,8 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            var isDarkTheme by remember { mutableStateOf(false) }
-            var selectedTheme by remember { mutableStateOf(AppTheme.BLUE) }
+            var isDarkTheme by rememberSaveable { mutableStateOf(false) }
+            var selectedTheme by rememberSaveable { mutableStateOf(AppTheme.BLUE) }
 
             QuizAppTheme(
                 selectedTheme = selectedTheme,
