@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "question": "What hidden feature do recen asd asd sa dsa das d sad as d sadasdsa dsad sadsadsa dsadsa dasdsa dasdsad sadas dasd ast Android versions reveal when you tap the version number multiple times in Settings?",
+    "options": [
+      "Flappy Bird–style game",
+      "Virtual pet",
+      "Hidden performance menu",
+      "System UI tuner"
+    ],
+    "correctOptionIndex": 0
+  },
+  {
+    "id": 2,
+    "question": "If you were to implement 'shake to undo' in your Android app, what’s the biggest technical challenge you'd face?",
+    "options": [
+      "Detecting accidental shakes",
+      "Battery drain due to sensors",
+      "Android doesn't allow motion APIs",
+      "Undo logic is illegal on Android"
+    ],
+    "correctOptionIndex": 0
+  }
+]
