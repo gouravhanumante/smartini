@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.dailyrounds.quizapp.data.Question
+import com.dailyrounds.quizapp.ui.components.BackButton
 import com.dailyrounds.quizapp.ui.components.Timer
 import com.dailyrounds.quizapp.ui.theme.AppTheme
 import com.dailyrounds.quizapp.viewmodel.QuestionViewModel
@@ -68,11 +69,15 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 
 
 @Composable
-fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
+fun QuizScreen(
+    viewModel: QuestionViewModel, 
+    selectedTheme: AppTheme, 
+    onBackClick: (() -> Unit)? = null
+) {
     val uiState by viewModel.uiState.collectAsState()
     val currentQuestion = viewModel.getCurrentQuestion()
 
-    if (currentQuestion == null || viewModel.isQuizCompleted()) {
+    if (currentQuestion == null) {
         return
     }
 
@@ -108,6 +113,12 @@ fun QuizScreen(viewModel: QuestionViewModel, selectedTheme: AppTheme) {
                 .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = 16.dp)
         ) {
+            if (onBackClick != null) {
+                BackButton(
+                    onBackClick = onBackClick,
+                    text = "Back to Modules"
+                )
+            }
 
             val undoAlpha by animateFloatAsState(
                 targetValue = if (uiState.reachedViaSkip && uiState.selectedAnswer == null) 1f else 0f,

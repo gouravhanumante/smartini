@@ -1,0 +1,62 @@
+[
+  {
+    "id": "android_basics",
+    "title": "Android Basics",
+    "description": "Fundamentals of Android development",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/790f2b2dcb6bb7a91a56befe22cbd5099d838693/android_basics.json"
+  },
+  {
+    "id": "jetpack_compose",
+    "title": "Jetpack Compose",
+    "description": "Modern UI toolkit for Android",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/450fd602caac596a9127dc51d695c63e609542c5/jetpack_compose.json"
+  },
+  {
+    "id": "android_lifecycle",
+    "title": "Activity & Lifecycle",
+    "description": "Understanding activity lifecycle and related components",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/790f2b2dcb6bb7a91a56befe22cbd5099d838693/android_lifecycle.json"
+  },
+  {
+    "id": "networking",
+    "title": "Networking",
+    "description": "Handling API calls, Retrofit, and caching",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/450fd602caac596a9127dc51d695c63e609542c5/networking.json"
+  },
+  {
+    "id": "background_tasks",
+    "title": "Background Tasks",
+    "description": "WorkManager, coroutines, and threading",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/790f2b2dcb6bb7a91a56befe22cbd5099d838693/background_tasks.json"
+  },
+  {
+    "id": "ui_ux",
+    "title": "UI/UX Patterns",
+    "description": "Design patterns and user experience in Android",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/790f2b2dcb6bb7a91a56befe22cbd5099d838693/ui_ux.json"
+  },
+  {
+    "id": "android_testing",
+    "title": "Android Testing",
+    "description": "Unit, UI and integration testing on Android",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/790f2b2dcb6bb7a91a56befe22cbd5099d838693/android_testing.json"
+  },
+  {
+    "id": "security",
+    "title": "Security",
+    "description": "Permissions, data security, and best practices",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/450fd602caac596a9127dc51d695c63e609542c5/security.json"
+  },
+  {
+    "id": "performance",
+    "title": "Performance",
+    "description": "App performance, memory and CPU optimizations",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/790f2b2dcb6bb7a91a56befe22cbd5099d838693/performance.json"
+  },
+  {
+    "id": "architecture",
+    "title": "Architecture Patterns",
+    "description": "MVVM, MVI, Clean Architecture, and more",
+    "questions_url": "https://gist.githubusercontent.com/dr-samrat/0be7c28b6cb58e1c0674c11d7f0ba35d/raw/790f2b2dcb6bb7a91a56befe22cbd5099d838693/architecture.json"
+  }
+]

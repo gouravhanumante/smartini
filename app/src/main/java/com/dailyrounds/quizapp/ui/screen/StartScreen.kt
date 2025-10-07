@@ -19,22 +19,33 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dailyrounds.quizapp.repository.ModulesRepository
+import com.dailyrounds.quizapp.ui.components.Modules
 import com.dailyrounds.quizapp.ui.theme.AppTheme
 import com.dailyrounds.quizapp.ui.theme.ButtonStore
 import com.dailyrounds.quizapp.ui.theme.getTheme
+import com.dailyrounds.quizapp.viewmodel.ModulesViewModel
 
 @Composable
 fun StartScreen(
     onStartQuiz: () -> Unit,
     selectedTheme: AppTheme,
-    onThemeChange: (AppTheme) -> Unit = {}
+    onThemeChange: (AppTheme) -> Unit,
+    moduleViewModel: ModulesViewModel,
+    repository: ModulesRepository
 ) {
+
+    LaunchedEffect(Unit) {
+        moduleViewModel.fetchModules()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -101,12 +112,9 @@ fun StartScreen(
                 }
             }
 
-            Spacer(Modifier.weight(.5f))
+            Modules(moduleViewModel, repository, selectedTheme)
 
-            ButtonStore.PrimaryButton(
-                "Start Quiz",
-                onClick = onStartQuiz,
-            )
+            Spacer(Modifier.weight(.5f))
 
         }
     }

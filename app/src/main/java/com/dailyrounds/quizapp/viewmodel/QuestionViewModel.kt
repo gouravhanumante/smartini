@@ -3,6 +3,9 @@ package com.dailyrounds.quizapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dailyrounds.quizapp.data.Question
+import com.dailyrounds.quizapp.db.ModuleDao
+import com.dailyrounds.quizapp.db.ModuleEntity
+import com.dailyrounds.quizapp.network.Result
 import com.dailyrounds.quizapp.repository.QuestionRepository
 import com.dailyrounds.quizapp.ui.QuestionUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,89 +25,23 @@ enum class AnimationDirection {
 
 @HiltViewModel
 class QuestionViewModel @Inject constructor(
-    private val repository: QuestionRepository
+    private val repository: QuestionRepository,
+    private val moduleDao: ModuleDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(QuestionUiState())
     val uiState: StateFlow<QuestionUiState> = _uiState.asStateFlow()
 
-    private var currentPage = 0
-    private var totalPages = 1
-    private val currentQuestions = mutableListOf<Question>()
     private var timerJob: kotlinx.coroutines.Job? = null
 
-    init {
-        loadQuestions()
-    }
 
-    fun loadQuestions() {
-        viewModelScope.launch {
-            _uiState.value =
-                QuestionUiState(result = com.dailyrounds.quizapp.network.Result.Loading)
-
-            try {
-                val questionsState = withContext(Dispatchers.IO) {
-                    repository.getQuestionsAndMetadata(0, 20)
-                }
-
-                if (questionsState is com.dailyrounds.quizapp.network.Result.Success) {
-                    val questionResponse = questionsState.data
-
-                    currentPage = questionResponse.page
-                    totalPages = (questionResponse.total + 20 - 1) / 20
-
-                    currentQuestions.clear()
-                    currentQuestions.addAll(questionResponse.questions)
-
-                    _uiState.value = QuestionUiState(
-                        result = com.dailyrounds.quizapp.network.Result.Success(
-                            currentQuestions.toList()
-                        )
-                    )
-
-                    if (questionResponse.hasMore) {
-                        preloadRemainingQuestions()
-                    }
-                } else {
-                    throw Exception("Network response unsuccessful")
-                }
-
-            } catch (e: Exception) {
-                _uiState.value = QuestionUiState(
-                    result = com.dailyrounds.quizapp.network.Result.Error(
-                        e.message ?: "An exception occurred"
-                    )
-                )
-            }
-        }
-    }
-
-    private fun preloadRemainingQuestions() {
-        viewModelScope.launch {
-            try {
-                while (currentPage < totalPages - 1) {
-                    currentPage++
-                    val response = withContext(Dispatchers.IO) {
-                        repository.getQuestionsAndMetadata(currentPage, 20)
-                    }
-
-                    if (response is com.dailyrounds.quizapp.network.Result.Success) {
-                        val questionResponse = response.data
-                        val newQuestions = questionResponse.questions
-
-                        currentQuestions.addAll(newQuestions)
-                    } else {
-                        break
-                    }
-                }
-            } catch (e: Exception) {
-            }
-            //do nothing its background call in error casw
-        }
-    }
 
     fun retry() {
-        loadQuestions()
+        _uiState.value = QuestionUiState(
+            result = Result.Error(
+                "Please go back and select a module to retry"
+            )
+        )
     }
 
     fun selectAnswer(optionIndex: Int) {
@@ -194,23 +131,34 @@ class QuestionViewModel @Inject constructor(
 
     fun getCurrentQuestion(): Question? {
         val currentState = _uiState.value
-        return if (currentState.currentQuestionIndex < currentQuestions.size) {
-            currentQuestions[currentState.currentQuestionIndex]
+        val questions = (currentState.result as? Result.Success)?.data ?: return null
+        return if (currentState.currentQuestionIndex < questions.size) {
+            questions[currentState.currentQuestionIndex]
         } else null
     }
 
     fun isLastQuestion(): Boolean {
         val currentState = _uiState.value
-        return currentState.currentQuestionIndex >= currentQuestions.size - 1
+        val questions = (currentState.result as? Result.Success)?.data ?: return false
+        return currentState.currentQuestionIndex >= questions.size - 1
     }
 
     fun isQuizCompleted(): Boolean {
         val currentState = _uiState.value
-        return currentState.currentQuestionIndex >= currentQuestions.size
+        val questions = (currentState.result as? Result.Success)?.data ?: return false
+        return currentState.currentQuestionIndex >= questions.size
+    }
+    
+    fun completeQuiz(moduleId: String = "") {
+        val currentState = _uiState.value
+        val idToUse = moduleId.ifEmpty { currentState.currentModuleId }
+        saveResult(idToUse)
     }
 
     fun getTotalQuestions(): Int {
-        return currentQuestions.size
+        val currentState = _uiState.value
+        val questions = (currentState.result as? Result.Success)?.data ?: return 0
+        return questions.size
     }
 
     fun getFinalScore(): Int {
@@ -226,6 +174,44 @@ class QuestionViewModel @Inject constructor(
         return _uiState.value.skippedQuestions
     }
 
+    fun setPreviousResults(score: Int, totalQuestions: Int, highestStreak: Int = 0, skippedQuestions: Int = 0) {
+        val currentState = _uiState.value
+        _uiState.value = currentState.copy(
+            score = score,
+            currentQuestionIndex = totalQuestions, 
+            timerActive = false,
+            highestStreak = highestStreak,
+            skippedQuestions = skippedQuestions
+        )
+    }
+
+    fun saveResult(moduleId: String) {
+        val currentState = _uiState.value
+        val score = currentState.score
+        val totalQuestions = getTotalQuestions()
+        val highestStreak = currentState.highestStreak
+        val skippedQuestions = currentState.skippedQuestions
+
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val moduleData = ModuleEntity(
+                        moduleId = moduleId,
+                        previousScore = score,
+                        totalQuestions = totalQuestions,
+                        highestStreak = highestStreak,
+                        skippedQuestions = skippedQuestions,
+                        isCompleted = true,
+                    )
+                    moduleDao.saveModuleData(moduleData)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
     fun resetAnimationDirection() {
         val currentState = _uiState.value
         _uiState.value = currentState.copy(animationDirection = AnimationDirection.NONE)
@@ -240,13 +226,52 @@ class QuestionViewModel @Inject constructor(
     }
 
     fun restartQuiz() {
-        repository.clearCache()
-        currentPage = 0
-        totalPages = 1
-        currentQuestions.clear()
         stopTimer()
-        _uiState.value = QuestionUiState()
-        loadQuestions()
+        _uiState.value = QuestionUiState(
+            result = Result.Error(
+                "Please select a module to load questions"
+            )
+        )
+    }
+
+    fun loadQuestionsforModule(moduleId: String, questionsUrl: String) {
+        viewModelScope.launch {
+            stopTimer()
+            _uiState.value = QuestionUiState(
+                result = Result.Loading,
+                currentModuleId = moduleId
+            )
+            
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    repository.getQuestions(questionsUrl)
+                }
+                
+                if (result is Result.Success) {
+                    _uiState.value = QuestionUiState(
+                        result = Result.Success(result.data ?: emptyList()),
+                        currentModuleId = moduleId,
+                        timerActive = true,
+                        timeRemaining = 15
+                    )
+                    startTimer()
+                } else {
+                    _uiState.value = QuestionUiState(
+                        result = Result.Error(
+                            (result as Result.Error).message
+                        ),
+                        currentModuleId = moduleId
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = QuestionUiState(
+                    result = Result.Error(
+                        e.message ?: "Failed to load module questions"
+                    ),
+                    currentModuleId = moduleId
+                )
+            }
+        }
     }
 
     private fun startTimer() {

@@ -17,5 +17,6 @@ data class QuestionUiState(
     val highestStreak: Int = 0,
     val skippedQuestions: Int = 0,
     val timeRemaining: Int = 15,
-    val timerActive: Boolean = false
+    val timerActive: Boolean = false,
+    val currentModuleId: String = ""
 )
