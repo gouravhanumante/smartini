@@ -94,6 +94,12 @@ fun ModuleItem(
 
     val isCompleted = dbModuleData.value?.isCompleted ?: false
     val score = dbModuleData.value?.previousScore ?: 0
+    
+    val cardColor = if (isCompleted) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.primaryContainer
+    }
 
     Card(
         Modifier
@@ -104,7 +110,7 @@ fun ModuleItem(
                 moduleViewModel.selectModule(module)
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            containerColor = cardColor,
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isCompleted) 8.dp else 4.dp

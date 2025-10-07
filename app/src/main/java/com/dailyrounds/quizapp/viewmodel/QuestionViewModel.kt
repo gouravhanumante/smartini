@@ -32,9 +32,7 @@ class QuestionViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(QuestionUiState())
     val uiState: StateFlow<QuestionUiState> = _uiState.asStateFlow()
 
-    private val currentQuestions = mutableListOf<Question>()
     private var timerJob: kotlinx.coroutines.Job? = null
-    private var currentModuleId: String = ""
 
 
 
@@ -133,28 +131,34 @@ class QuestionViewModel @Inject constructor(
 
     fun getCurrentQuestion(): Question? {
         val currentState = _uiState.value
-        return if (currentState.currentQuestionIndex < currentQuestions.size) {
-            currentQuestions[currentState.currentQuestionIndex]
+        val questions = (currentState.result as? Result.Success)?.data ?: return null
+        return if (currentState.currentQuestionIndex < questions.size) {
+            questions[currentState.currentQuestionIndex]
         } else null
     }
 
     fun isLastQuestion(): Boolean {
         val currentState = _uiState.value
-        return currentState.currentQuestionIndex >= currentQuestions.size - 1
+        val questions = (currentState.result as? Result.Success)?.data ?: return false
+        return currentState.currentQuestionIndex >= questions.size - 1
     }
 
     fun isQuizCompleted(): Boolean {
         val currentState = _uiState.value
-        return currentState.currentQuestionIndex >= currentQuestions.size
+        val questions = (currentState.result as? Result.Success)?.data ?: return false
+        return currentState.currentQuestionIndex >= questions.size
     }
     
     fun completeQuiz(moduleId: String = "") {
-        val idToUse = moduleId.ifEmpty { currentModuleId }
+        val currentState = _uiState.value
+        val idToUse = moduleId.ifEmpty { currentState.currentModuleId }
         saveResult(idToUse)
     }
 
     fun getTotalQuestions(): Int {
-        return currentQuestions.size
+        val currentState = _uiState.value
+        val questions = (currentState.result as? Result.Success)?.data ?: return 0
+        return questions.size
     }
 
     fun getFinalScore(): Int {
@@ -222,8 +226,6 @@ class QuestionViewModel @Inject constructor(
     }
 
     fun restartQuiz() {
-        repository.clearCache()
-        currentQuestions.clear()
         stopTimer()
         _uiState.value = QuestionUiState(
             result = Result.Error(
@@ -233,11 +235,12 @@ class QuestionViewModel @Inject constructor(
     }
 
     fun loadQuestionsforModule(moduleId: String, questionsUrl: String) {
-        this.currentModuleId = moduleId
         viewModelScope.launch {
-            currentQuestions.clear()
             stopTimer()
-            _uiState.value = QuestionUiState(result = Result.Loading)
+            _uiState.value = QuestionUiState(
+                result = Result.Loading,
+                currentModuleId = moduleId
+            )
             
             try {
                 val result = withContext(Dispatchers.IO) {
@@ -245,24 +248,27 @@ class QuestionViewModel @Inject constructor(
                 }
                 
                 if (result is Result.Success) {
-                    currentQuestions.clear()
-                    currentQuestions.addAll(result.data ?: emptyList())
-                    
                     _uiState.value = QuestionUiState(
-                        result = Result.Success(result.data ?: emptyList())
+                        result = Result.Success(result.data ?: emptyList()),
+                        currentModuleId = moduleId,
+                        timerActive = true,
+                        timeRemaining = 15
                     )
+                    startTimer()
                 } else {
                     _uiState.value = QuestionUiState(
                         result = Result.Error(
                             (result as Result.Error).message
-                        )
+                        ),
+                        currentModuleId = moduleId
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = QuestionUiState(
                     result = Result.Error(
                         e.message ?: "Failed to load module questions"
-                    )
+                    ),
+                    currentModuleId = moduleId
                 )
             }
         }

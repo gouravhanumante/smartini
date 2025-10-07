@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.dailyrounds.quizapp.data.Module
 import com.dailyrounds.quizapp.network.Result
 import com.dailyrounds.quizapp.repository.ModulesRepository
-import com.dailyrounds.quizapp.repository.QuestionRepository
 import com.dailyrounds.quizapp.ui.ModuleUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -21,12 +20,6 @@ class ModulesViewModel @Inject constructor(private val repository: ModulesReposi
     private val _uiState = MutableStateFlow<ModuleUIState>(ModuleUIState())
     val uiState = _uiState.asStateFlow()
 
-    private var modules = mutableListOf<Module>()
-
-
-//    init {
-//        fetchModules()
-//    }
     fun fetchModules() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(result = Result.Loading)

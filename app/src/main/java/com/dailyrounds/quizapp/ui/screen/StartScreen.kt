@@ -37,7 +37,7 @@ import com.dailyrounds.quizapp.viewmodel.ModulesViewModel
 fun StartScreen(
     onStartQuiz: () -> Unit,
     selectedTheme: AppTheme,
-    onThemeChange: (AppTheme) -> Unit = {},
+    onThemeChange: (AppTheme) -> Unit,
     moduleViewModel: ModulesViewModel,
     repository: ModulesRepository
 ) {

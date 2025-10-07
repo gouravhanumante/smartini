@@ -76,21 +76,27 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(moduleUIState.selectedModule) {
                     val selected = moduleUIState.selectedModule
                     if (selected != null) {
-                        val completion = modulesRepository.fetchCompletionStatus(selected.id)
-                        if (completion?.isCompleted == true) {
-                            viewModel.setPreviousResults(
-                                score = completion.previousScore,
-                                totalQuestions = completion.totalQuestions,
-                                highestStreak = completion.highestStreak,
-                                skippedQuestions = completion.skippedQuestions
-                            )
-                            navController.navigate("result_screen")
-                        } else {
-                            viewModel.loadQuestionsforModule(
-                                selected.id,
-                                selected.questions_url
-                            )
-                            navController.navigate("main_page")
+                        val currentModuleId = uiState.currentModuleId
+                        val isAlreadyLoaded = currentModuleId == selected.id && 
+                                            uiState.result is Result.Success
+                        
+                        if (!isAlreadyLoaded) {
+                            val completion = modulesRepository.fetchCompletionStatus(selected.id)
+                            if (completion?.isCompleted == true) {
+                                viewModel.setPreviousResults(
+                                    score = completion.previousScore,
+                                    totalQuestions = completion.totalQuestions,
+                                    highestStreak = completion.highestStreak,
+                                    skippedQuestions = completion.skippedQuestions
+                                )
+                                navController.navigate("result_screen")
+                            } else {
+                                viewModel.loadQuestionsforModule(
+                                    selected.id,
+                                    selected.questions_url
+                                )
+                                navController.navigate("main_page")
+                            }
                         }
                     }
                 }
