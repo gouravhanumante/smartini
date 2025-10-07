@@ -176,7 +176,16 @@ class QuestionViewModel @Inject constructor(
 
     fun setPreviousResults(score: Int, totalQuestions: Int, highestStreak: Int = 0, skippedQuestions: Int = 0) {
         val currentState = _uiState.value
+        val emptyQuestions = List(totalQuestions) { index ->
+            Question(
+                id = index,
+                question = "",
+                options = emptyList(),
+                correctOptionIndex = 0
+            )
+        }
         _uiState.value = currentState.copy(
+            result = Result.Success(emptyQuestions),
             score = score,
             currentQuestionIndex = totalQuestions, 
             timerActive = false,
