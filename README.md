@@ -1,37 +1,56 @@
 # 🔥 Quiz App
 
-- **Questions and Answers**: Get questions with multiple choice answers
-- **Streak System**: Build your streak with fire animations!
-- **Swipe Navigation**: Swipe left to skip, swipe right to undo
-- **Timer Challenge**: Race against the clock to answer questions
-- **Beautiful UI**: Modern Material Design with smooth animations
-- **Responsive**: Works perfectly in both portrait and landscape modes
+An interactive Android quiz application with 10 modules, streak system, and timer challenge!
 
+## Features
 
-1. **Start Quiz**: Choose your theme and hit "Start Quiz"
-2. **Answer Questions**: Tap the correct answer or use the skip button
-3. **Build Streaks**: Get 3+ correct answers in a row for special fire animations
-4. **Beat the Timer**: Answer before time runs out!
+- **10 Quiz Modules**: Android Basics, Jetpack Compose, Lifecycle, Networking, Background Tasks, UI/UX, Testing, Security, Performance, Architecture
+- **Multiple Choice Questions**: Instant feedback on answers
+- **15-Second Timer**: Race against time or auto-skip
+- **Streak System**: Build streaks with fire animations!
+- **Swipe Navigation**: Left to skip, right to undo
+- **Progress Tracking**: Resume where you left off with Room database
+- **Theme Customization**: Multiple color themes with dark mode
+- **Beautiful UI**: Material Design 3 with Lottie animations
+- **Responsive**: Works in portrait and landscape modes
 
+## How to Play
 
-- **3 Streak**: Small fire animation
-- **5 Streak**: Red fire animation 
-- **7 Streak**: Blue fire animation 
-- **Streak Break**: Smoke animation 
+1. **Select a Module**: Choose from 10 Android development topics
+2. **Answer Questions**: Tap the correct answer before timer runs out
+3. **Build Streaks**: Get 3+ correct answers for fire animations
+4. **Track Progress**: View your score, highest streak, and results
 
+## Streak Animations
 
-## Build With:
+- **3 Streak**: Small fire animation 🔥
+- **5 Streak**: Red fire animation 🔥🔥
+- **7+ Streak**: Blue fire animation 🔥🔥🔥
+- **Streak Break**: Smoke animation 💨
+
+## Built With
+
 - **Kotlin** - Modern Android development
 - **Jetpack Compose** - Declarative UI toolkit
 - **Material Design 3** - Beautiful, consistent design
+- **Hilt** - Dependency injection
+- **Room Database** - Local data persistence
+- **Retrofit + OkHttp** - Networking
 - **Lottie Animations** - Smooth, engaging animations
+- **Navigation Compose** - Type-safe navigation
+- **Coroutines + StateFlow** - Asynchronous programming
 - **MVVM Architecture** - Clean, maintainable code
-
 
 ## Getting Started
 
 1. Clone the repository
 2. Open in Android Studio
-3. Run on your device or emulator
-4. Start quizzing!
+3. Sync Gradle dependencies
+4. Run on your device or emulator
+5. Start quizzing!
 
+## Requirements
+
+- Android Studio Hedgehog or newer
+- JDK 11+
+- Min SDK: 24, Target SDK: 36
