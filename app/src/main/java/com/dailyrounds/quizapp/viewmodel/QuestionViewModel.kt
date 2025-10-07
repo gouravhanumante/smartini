@@ -3,6 +3,9 @@ package com.dailyrounds.quizapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dailyrounds.quizapp.data.Question
+import com.dailyrounds.quizapp.db.ModuleDao
+import com.dailyrounds.quizapp.db.ModuleEntity
+import com.dailyrounds.quizapp.network.Result
 import com.dailyrounds.quizapp.repository.QuestionRepository
 import com.dailyrounds.quizapp.ui.QuestionUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +25,8 @@ enum class AnimationDirection {
 
 @HiltViewModel
 class QuestionViewModel @Inject constructor(
-    private val repository: QuestionRepository
+    private val repository: QuestionRepository,
+    private val moduleDao: ModuleDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(QuestionUiState())
@@ -32,6 +36,7 @@ class QuestionViewModel @Inject constructor(
     private var totalPages = 1
     private val currentQuestions = mutableListOf<Question>()
     private var timerJob: kotlinx.coroutines.Job? = null
+    private var currentModuleId: String? = null
 
     init {
         loadQuestions()
@@ -160,6 +165,7 @@ class QuestionViewModel @Inject constructor(
                 timeRemaining = 15,
                 timerActive = false
             )
+            saveResult()
         }
     }
 
@@ -226,6 +232,31 @@ class QuestionViewModel @Inject constructor(
         return _uiState.value.skippedQuestions
     }
 
+    fun saveResult() {
+        val currentState = _uiState.value
+        val moduleId = currentModuleId ?: ""
+        val score = currentState.score
+        val totalQuestions = getTotalQuestions()
+
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+
+                    val moduleData = ModuleEntity(
+                        moduleId = moduleId,
+                        previousScore = score,
+                        totalQuestions = totalQuestions,
+                        isCompleted = true,
+                    )
+                    moduleDao.saveModuleData(moduleData)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
     fun resetAnimationDirection() {
         val currentState = _uiState.value
         _uiState.value = currentState.copy(animationDirection = AnimationDirection.NONE)
@@ -247,6 +278,40 @@ class QuestionViewModel @Inject constructor(
         stopTimer()
         _uiState.value = QuestionUiState()
         loadQuestions()
+    }
+
+    fun loadQuestionsforModule(moduleId: String, questionsUrl: String) {
+        currentModuleId = moduleId
+        viewModelScope.launch {
+            _uiState.value = QuestionUiState(result = Result.Loading)
+            
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    repository.getQuestions(questionsUrl)
+                }
+                
+                if (result is Result.Success) {
+                    currentQuestions.clear()
+                    currentQuestions.addAll(result.data ?: emptyList())
+                    
+                    _uiState.value = QuestionUiState(
+                        result = Result.Success(result.data ?: emptyList())
+                    )
+                } else {
+                    _uiState.value = QuestionUiState(
+                        result = Result.Error(
+                            (result as Result.Error).message
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = QuestionUiState(
+                    result = Result.Error(
+                        e.message ?: "Failed to load module questions"
+                    )
+                )
+            }
+        }
     }
 
     private fun startTimer() {

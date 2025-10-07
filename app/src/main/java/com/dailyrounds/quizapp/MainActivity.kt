@@ -11,30 +11,33 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.dailyrounds.quizapp.network.Result
+import com.dailyrounds.quizapp.repository.ModulesRepository
 import com.dailyrounds.quizapp.ui.screen.MainPage
 import com.dailyrounds.quizapp.ui.screen.StartScreen
 import com.dailyrounds.quizapp.ui.theme.AppTheme
 import com.dailyrounds.quizapp.ui.theme.QuizAppTheme
+import com.dailyrounds.quizapp.viewmodel.ModulesViewModel
 import com.dailyrounds.quizapp.viewmodel.QuestionViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var modulesRepository: ModulesRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val splashScreen = installSplashScreen()
 
         enableEdgeToEdge()
-
-
 
         setContent {
             var isDarkTheme by rememberSaveable { mutableStateOf(false) }
@@ -45,49 +48,67 @@ class MainActivity : ComponentActivity() {
                 darkTheme = isDarkTheme,
                 dynamicColor = false
             ) {
-                key(selectedTheme) {
-                    val viewModel: QuestionViewModel = hiltViewModel()
-                    val uiState by viewModel.uiState.collectAsState()
-                    val result = uiState.result
+                val viewModel: QuestionViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsState()
 
-                    var showStartPage by rememberSaveable { mutableStateOf(true) }
+                val moduleViewModel: ModulesViewModel = hiltViewModel()
+                val moduleUIState by moduleViewModel.uiState.collectAsState()
 
-                    LaunchedEffect(uiState) {
-                        when (result) {
-                            is Result.Success -> {
-                                if (result.data.isNotEmpty()) {
-                                    splashScreen.setKeepOnScreenCondition { false }
-                                }
-                                if (!viewModel.isQuizCompleted() && uiState.currentQuestionIndex > 0) {
-                                    showStartPage = false
-                                }
-                            }
+                val result = uiState.result
 
-                            is Result.Error -> {
+                var showStartPage by rememberSaveable {
+                    mutableStateOf(true)
+                }
+
+                LaunchedEffect(uiState) {
+                    when (result) {
+                        is Result.Success -> {
+                            if (result.data.isNotEmpty()) {
                                 splashScreen.setKeepOnScreenCondition { false }
                             }
-
-                            else -> {
+                            if (!viewModel.isQuizCompleted() && uiState.currentQuestionIndex > 0) {
+                                showStartPage = false
                             }
                         }
-                    }
 
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        if (showStartPage) {
-                            StartScreen(
-                                onStartQuiz = {
-                                    viewModel.startQuiz()
-                                    showStartPage = false
-                                },
-                                selectedTheme = selectedTheme,
-                                onThemeChange = { theme -> selectedTheme = theme }
-                            )
-                        } else {
-                            MainPage(viewModel, selectedTheme, onHome = {
-                                viewModel.restartQuiz()
-                                showStartPage = true
-                            })
+                        is Result.Error -> {
+                            splashScreen.setKeepOnScreenCondition { false }
                         }
+
+                        else -> {
+                        }
+                    }
+                }
+
+                LaunchedEffect(moduleUIState.selectedModule) {
+                    if (moduleUIState.selectedModule != null) {
+                        showStartPage = false
+                        viewModel.loadQuestionsforModule(
+                            moduleUIState.selectedModule?.id ?: "",
+                            moduleUIState.selectedModule?.questions_url ?: ""
+                        )
+                    }
+                }
+
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    if (showStartPage) {
+                        StartScreen(
+                            onStartQuiz = {
+                                viewModel.startQuiz()
+                                showStartPage = false
+                            },
+                            selectedTheme = selectedTheme,
+                            onThemeChange = { theme ->
+                                selectedTheme = theme
+                            },
+                            moduleViewModel = moduleViewModel,
+                            repository = modulesRepository
+                        )
+                    } else {
+                        MainPage(viewModel, selectedTheme, onHome = {
+                            viewModel.restartQuiz()
+                            showStartPage = true
+                        })
                     }
                 }
             }
