@@ -51,7 +51,6 @@ fun QuizNavigation(
             MainPage(
                 viewModel = questionViewModel,
                 selectedTheme = selectedTheme,
-                moduleId = modulesViewModel.uiState.value.selectedModule?.id ?: "",
                 onNavigateToResult = {
                     navController.navigate(QuizRoutes.RESULT_SCREEN)
                 },
@@ -79,15 +78,15 @@ fun QuizNavigation(
                 skippedQuestions = questionViewModel.getSkippedQuestions(),
                 selectedTheme = selectedTheme,
                 onRestartQuiz = {
-                    questionViewModel.restartQuiz()
-                    navController.navigate(QuizRoutes.START_SCREEN) {
-                        popUpTo(QuizRoutes.START_SCREEN) {
-                            inclusive = true
-                        }
+                    val selectedModule = modulesViewModel.uiState.value.selectedModule
+                    selectedModule?.let { module ->
+                        questionViewModel.loadQuestionsforModule(module.id, module.questions_url)
+                        navController.navigate(QuizRoutes.MAIN_PAGE)
                     }
                 },
                 onHome = {
                     questionViewModel.restartQuiz()
+                    modulesViewModel.clearSelection()
                     navController.navigate(QuizRoutes.START_SCREEN) {
                         popUpTo(QuizRoutes.START_SCREEN) {
                             inclusive = true

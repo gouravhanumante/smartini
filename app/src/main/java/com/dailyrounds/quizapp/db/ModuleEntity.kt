@@ -8,6 +8,8 @@ data class ModuleEntity(
     @PrimaryKey val moduleId: String,
     val previousScore: Int = 0,
     val totalQuestions: Int = 0,
+    val highestStreak: Int = 0,
+    val skippedQuestions: Int = 0,
     val isCompleted: Boolean = false,
 )
 

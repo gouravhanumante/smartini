@@ -74,12 +74,24 @@ class MainActivity : ComponentActivity() {
                 }
 
                 LaunchedEffect(moduleUIState.selectedModule) {
-                    if (moduleUIState.selectedModule != null) {
-                        viewModel.loadQuestionsforModule(
-                            moduleUIState.selectedModule?.id ?: "",
-                            moduleUIState.selectedModule?.questions_url ?: ""
-                        )
-                        navController.navigate("main_page")
+                    val selected = moduleUIState.selectedModule
+                    if (selected != null) {
+                        val completion = modulesRepository.fetchCompletionStatus(selected.id)
+                        if (completion?.isCompleted == true) {
+                            viewModel.setPreviousResults(
+                                score = completion.previousScore,
+                                totalQuestions = completion.totalQuestions,
+                                highestStreak = completion.highestStreak,
+                                skippedQuestions = completion.skippedQuestions
+                            )
+                            navController.navigate("result_screen")
+                        } else {
+                            viewModel.loadQuestionsforModule(
+                                selected.id,
+                                selected.questions_url
+                            )
+                            navController.navigate("main_page")
+                        }
                     }
                 }
 

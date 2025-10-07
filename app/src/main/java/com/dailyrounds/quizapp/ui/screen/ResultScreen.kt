@@ -159,10 +159,10 @@ fun ResultScreen(
             modifier = Modifier.padding(bottom = 10.dp),
             textAlign = TextAlign.Center
         )
+        Spacer(Modifier.weight(1f))
         ButtonStore.PrimaryButton(
             text = "Go To Home",
             onClick = onHome,
-            modifier = Modifier.weight(1f)
         )
     }
 }

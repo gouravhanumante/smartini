@@ -58,5 +58,11 @@ class ModulesViewModel @Inject constructor(private val repository: ModulesReposi
         )
     }
 
+    fun clearSelection() {
+        _uiState.value = _uiState.value.copy(
+            selectedModule = null
+        )
+    }
+
 
 }

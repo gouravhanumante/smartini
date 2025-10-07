@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import com.dailyrounds.quizapp.network.Result
 import com.dailyrounds.quizapp.ui.components.ErrorScreen
 import com.dailyrounds.quizapp.ui.components.LoadingIndicator
+import com.dailyrounds.quizapp.ui.screen.QuizScreen
 import com.dailyrounds.quizapp.ui.theme.AppTheme
 import com.dailyrounds.quizapp.viewmodel.QuestionViewModel
 
@@ -17,7 +18,6 @@ import com.dailyrounds.quizapp.viewmodel.QuestionViewModel
 fun MainPage(
     viewModel: QuestionViewModel, 
     selectedTheme: AppTheme, 
-    moduleId: String,
     onNavigateToResult: () -> Unit,
     onBackClick: () -> Unit
 ) {
@@ -26,7 +26,7 @@ fun MainPage(
 
     LaunchedEffect(uiState.currentQuestionIndex, uiState.result) {
         if (viewModel.isQuizCompleted() && uiState.result is Result.Success) {
-            viewModel.completeQuiz(moduleId)
+            viewModel.completeQuiz()
             onNavigateToResult()
         }
     }
@@ -37,14 +37,14 @@ fun MainPage(
                 ErrorScreen(
                     title = "Unable to Load Questions",
                     message = result.message,
-                    onRetry = { 
+                    onRetry = {
                         viewModel.retry()
                     },
                     onBack = onBackClick
                 )
             }
 
-            Result.Loading -> {
+            is Result.Loading -> {
                 LoadingIndicator(
                     message = "Loading questions..."
                 )
@@ -52,8 +52,8 @@ fun MainPage(
 
             is Result.Success<*> -> {
                 QuizScreen(
-                    viewModel = viewModel, 
-                    selectedTheme = selectedTheme, 
+                    viewModel = viewModel,
+                    selectedTheme = selectedTheme,
                     onBackClick = onBackClick
                 )
             }

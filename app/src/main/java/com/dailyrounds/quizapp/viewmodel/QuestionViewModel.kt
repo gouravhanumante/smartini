@@ -34,6 +34,7 @@ class QuestionViewModel @Inject constructor(
 
     private val currentQuestions = mutableListOf<Question>()
     private var timerJob: kotlinx.coroutines.Job? = null
+    private var currentModuleId: String = ""
 
 
 
@@ -147,8 +148,9 @@ class QuestionViewModel @Inject constructor(
         return currentState.currentQuestionIndex >= currentQuestions.size
     }
     
-    fun completeQuiz(moduleId: String) {
-        saveResult(moduleId)
+    fun completeQuiz(moduleId: String = "") {
+        val idToUse = moduleId.ifEmpty { currentModuleId }
+        saveResult(idToUse)
     }
 
     fun getTotalQuestions(): Int {
@@ -168,10 +170,23 @@ class QuestionViewModel @Inject constructor(
         return _uiState.value.skippedQuestions
     }
 
+    fun setPreviousResults(score: Int, totalQuestions: Int, highestStreak: Int = 0, skippedQuestions: Int = 0) {
+        val currentState = _uiState.value
+        _uiState.value = currentState.copy(
+            score = score,
+            currentQuestionIndex = totalQuestions, 
+            timerActive = false,
+            highestStreak = highestStreak,
+            skippedQuestions = skippedQuestions
+        )
+    }
+
     fun saveResult(moduleId: String) {
         val currentState = _uiState.value
         val score = currentState.score
         val totalQuestions = getTotalQuestions()
+        val highestStreak = currentState.highestStreak
+        val skippedQuestions = currentState.skippedQuestions
 
         viewModelScope.launch {
             try {
@@ -180,6 +195,8 @@ class QuestionViewModel @Inject constructor(
                         moduleId = moduleId,
                         previousScore = score,
                         totalQuestions = totalQuestions,
+                        highestStreak = highestStreak,
+                        skippedQuestions = skippedQuestions,
                         isCompleted = true,
                     )
                     moduleDao.saveModuleData(moduleData)
@@ -216,6 +233,7 @@ class QuestionViewModel @Inject constructor(
     }
 
     fun loadQuestionsforModule(moduleId: String, questionsUrl: String) {
+        this.currentModuleId = moduleId
         viewModelScope.launch {
             currentQuestions.clear()
             stopTimer()
