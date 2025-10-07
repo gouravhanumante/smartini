@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,11 +37,16 @@ fun Modules(
     val result = uiState.result
     when (result) {
         is Result.Error<*> -> {
-            Text("Unable to fetch modules")
+            CompactErrorScreen(
+                message = result.message,
+                onRetry = { moduleViewModel.fetchModules() }
+            )
         }
 
         Result.Loading -> {
-//            LoadingIndicator()
+            CompactLoadingIndicator(
+                message = "Loading modules..."
+            )
         }
 
         is Result.Success -> {
@@ -59,7 +66,7 @@ fun ModulesUI(
         for (module in result) {
             ModuleItem(
                 module, moduleViewModel, repository, selectedTheme,
-                onClickModule = {  }
+                onClickModule = { }
             )
         }
     }
@@ -71,7 +78,7 @@ fun ModuleItem(
     moduleViewModel: ModulesViewModel,
     repository: ModulesRepository,
     selectedTheme: AppTheme,
-    onClickModule :(ModuleEntity?) -> Unit
+    onClickModule: (ModuleEntity?) -> Unit
 ) {
     var dbModuleData = remember { mutableStateOf<ModuleEntity?>(null) }
     LaunchedEffect(module) {
@@ -81,44 +88,32 @@ fun ModuleItem(
     }
 
     val isCompleted = dbModuleData.value?.isCompleted ?: false
-    val score = dbModuleData.value?.previousScore
-    val totalQuestions = dbModuleData.value?.totalQuestions
+    val score = dbModuleData.value?.previousScore ?: 0
 
-    val showResult = remember { mutableStateOf(false) }
-    Card(Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 20.dp)
-        .padding(vertical = 10.dp)
-        .clickable {
+    val cardColor = if (isCompleted) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.primaryContainer
+    }
+    Card(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(vertical = 10.dp)
+            .clickable {
                 moduleViewModel.selectModule(module)
-//            onClickModule.invoke(dbModuleData.value)
-//            if (isCompleted == true) {
-//                showResult.value = true
-//
-//            } else {
-//                showResult.value = false
-//            }
-        }) {
-//        if (showResult.value) {
-//            ResultScreen(
-//                score = score ?: 0,
-//                totalQuestions = totalQuestions ?: 10,
-//                highestStreak = 0,
-//                skippedQuestions = 0,
-//                selectedTheme = selectedTheme,
-//                onRestartQuiz = {}
-//            ) { }
-//        } else {
-//        }
-            Column(Modifier.padding(vertical = 12.dp, horizontal = 10.dp)) {
-                Text(text = module.title)
-                val text = if (isCompleted) "Review" else "Start Quiz"
-                ButtonStore.PrimaryButton(text, onClick = {})
-                Text(text = dbModuleData.value?.isCompleted?.toString() ?: "false")
-                val score = dbModuleData.value?.previousScore ?: 0
-                if (score!= 0) {
-                    Text(text = "Score $score")
-                }
+            },
+        colors = CardDefaults.cardColors(
+            containerColor = cardColor,
+        )
+    ) {
+        Column(Modifier.padding(vertical = 12.dp, horizontal = 10.dp)) {
+            Text(text = module.title)
+            val text = if (isCompleted) "Review" else "Start Quiz"
+            if (score != 0) {
+                Text(text = "Score $score")
             }
+            ButtonStore.PrimaryButton(text, onClick = {})
+        }
     }
 }

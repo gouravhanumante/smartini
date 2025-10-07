@@ -32,84 +32,17 @@ class QuestionViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(QuestionUiState())
     val uiState: StateFlow<QuestionUiState> = _uiState.asStateFlow()
 
-    private var currentPage = 0
-    private var totalPages = 1
     private val currentQuestions = mutableListOf<Question>()
     private var timerJob: kotlinx.coroutines.Job? = null
-    private var currentModuleId: String? = null
 
-    init {
-        loadQuestions()
-    }
 
-    fun loadQuestions() {
-        viewModelScope.launch {
-            _uiState.value =
-                QuestionUiState(result = com.dailyrounds.quizapp.network.Result.Loading)
-
-            try {
-                val questionsState = withContext(Dispatchers.IO) {
-                    repository.getQuestionsAndMetadata(0, 20)
-                }
-
-                if (questionsState is com.dailyrounds.quizapp.network.Result.Success) {
-                    val questionResponse = questionsState.data
-
-                    currentPage = questionResponse.page
-                    totalPages = (questionResponse.total + 20 - 1) / 20
-
-                    currentQuestions.clear()
-                    currentQuestions.addAll(questionResponse.questions)
-
-                    _uiState.value = QuestionUiState(
-                        result = com.dailyrounds.quizapp.network.Result.Success(
-                            currentQuestions.toList()
-                        )
-                    )
-
-                    if (questionResponse.hasMore) {
-                        preloadRemainingQuestions()
-                    }
-                } else {
-                    throw Exception("Network response unsuccessful")
-                }
-
-            } catch (e: Exception) {
-                _uiState.value = QuestionUiState(
-                    result = com.dailyrounds.quizapp.network.Result.Error(
-                        e.message ?: "An exception occurred"
-                    )
-                )
-            }
-        }
-    }
-
-    private fun preloadRemainingQuestions() {
-        viewModelScope.launch {
-            try {
-                while (currentPage < totalPages - 1) {
-                    currentPage++
-                    val response = withContext(Dispatchers.IO) {
-                        repository.getQuestionsAndMetadata(currentPage, 20)
-                    }
-
-                    if (response is com.dailyrounds.quizapp.network.Result.Success) {
-                        val questionResponse = response.data
-                        val newQuestions = questionResponse.questions
-
-                        currentQuestions.addAll(newQuestions)
-                    } else {
-                        break
-                    }
-                }
-            } catch (e: Exception) {
-            }
-            //do nothing its background call in error casw
-        }
-    }
 
     fun retry() {
-        loadQuestions()
+        _uiState.value = QuestionUiState(
+            result = Result.Error(
+                "Please go back and select a module to retry"
+            )
+        )
     }
 
     fun selectAnswer(optionIndex: Int) {
@@ -165,7 +98,6 @@ class QuestionViewModel @Inject constructor(
                 timeRemaining = 15,
                 timerActive = false
             )
-            saveResult()
         }
     }
 
@@ -214,6 +146,10 @@ class QuestionViewModel @Inject constructor(
         val currentState = _uiState.value
         return currentState.currentQuestionIndex >= currentQuestions.size
     }
+    
+    fun completeQuiz(moduleId: String) {
+        saveResult(moduleId)
+    }
 
     fun getTotalQuestions(): Int {
         return currentQuestions.size
@@ -232,16 +168,14 @@ class QuestionViewModel @Inject constructor(
         return _uiState.value.skippedQuestions
     }
 
-    fun saveResult() {
+    fun saveResult(moduleId: String) {
         val currentState = _uiState.value
-        val moduleId = currentModuleId ?: ""
         val score = currentState.score
         val totalQuestions = getTotalQuestions()
 
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-
                     val moduleData = ModuleEntity(
                         moduleId = moduleId,
                         previousScore = score,
@@ -272,17 +206,19 @@ class QuestionViewModel @Inject constructor(
 
     fun restartQuiz() {
         repository.clearCache()
-        currentPage = 0
-        totalPages = 1
         currentQuestions.clear()
         stopTimer()
-        _uiState.value = QuestionUiState()
-        loadQuestions()
+        _uiState.value = QuestionUiState(
+            result = Result.Error(
+                "Please select a module to load questions"
+            )
+        )
     }
 
     fun loadQuestionsforModule(moduleId: String, questionsUrl: String) {
-        currentModuleId = moduleId
         viewModelScope.launch {
+            currentQuestions.clear()
+            stopTimer()
             _uiState.value = QuestionUiState(result = Result.Loading)
             
             try {

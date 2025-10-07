@@ -159,24 +159,10 @@ fun ResultScreen(
             modifier = Modifier.padding(bottom = 10.dp),
             textAlign = TextAlign.Center
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            ButtonStore.SecondaryButton(
-                text = "Restart Quiz",
-                onClick = onRestartQuiz,
-                modifier = Modifier.weight(1f)
-            )
-
-            ButtonStore.PrimaryButton(
-                text = "Go To Home",
-                onClick = onHome,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-
+        ButtonStore.PrimaryButton(
+            text = "Go To Home",
+            onClick = onHome,
+            modifier = Modifier.weight(1f)
+        )
     }
 }

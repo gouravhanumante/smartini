@@ -9,17 +9,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
+import com.dailyrounds.quizapp.navigation.QuizNavigation
 import com.dailyrounds.quizapp.network.Result
 import com.dailyrounds.quizapp.repository.ModulesRepository
-import com.dailyrounds.quizapp.ui.screen.MainPage
-import com.dailyrounds.quizapp.ui.screen.StartScreen
 import com.dailyrounds.quizapp.ui.theme.AppTheme
 import com.dailyrounds.quizapp.ui.theme.QuizAppTheme
 import com.dailyrounds.quizapp.viewmodel.ModulesViewModel
@@ -55,19 +54,13 @@ class MainActivity : ComponentActivity() {
                 val moduleUIState by moduleViewModel.uiState.collectAsState()
 
                 val result = uiState.result
-
-                var showStartPage by rememberSaveable {
-                    mutableStateOf(true)
-                }
+                val navController = rememberNavController()
 
                 LaunchedEffect(uiState) {
                     when (result) {
                         is Result.Success -> {
                             if (result.data.isNotEmpty()) {
                                 splashScreen.setKeepOnScreenCondition { false }
-                            }
-                            if (!viewModel.isQuizCompleted() && uiState.currentQuestionIndex > 0) {
-                                showStartPage = false
                             }
                         }
 
@@ -82,34 +75,25 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(moduleUIState.selectedModule) {
                     if (moduleUIState.selectedModule != null) {
-                        showStartPage = false
                         viewModel.loadQuestionsforModule(
                             moduleUIState.selectedModule?.id ?: "",
                             moduleUIState.selectedModule?.questions_url ?: ""
                         )
+                        navController.navigate("main_page")
                     }
                 }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (showStartPage) {
-                        StartScreen(
-                            onStartQuiz = {
-                                viewModel.startQuiz()
-                                showStartPage = false
-                            },
-                            selectedTheme = selectedTheme,
-                            onThemeChange = { theme ->
-                                selectedTheme = theme
-                            },
-                            moduleViewModel = moduleViewModel,
-                            repository = modulesRepository
-                        )
-                    } else {
-                        MainPage(viewModel, selectedTheme, onHome = {
-                            viewModel.restartQuiz()
-                            showStartPage = true
-                        })
-                    }
+                    QuizNavigation(
+                        navController = navController,
+                        questionViewModel = viewModel,
+                        modulesViewModel = moduleViewModel,
+                        modulesRepository = modulesRepository,
+                        selectedTheme = selectedTheme,
+                        onThemeChange = { theme ->
+                            selectedTheme = theme
+                        }
+                    )
                 }
             }
         }

@@ -39,9 +39,15 @@ class ModulesViewModel @Inject constructor(private val repository: ModulesReposi
                     _uiState.value = _uiState.value.copy(
                         result = Result.Success(result.data)
                     )
+                } else if (result is Result.Error) {
+                    _uiState.value = _uiState.value.copy(
+                        result = Result.Error(result.message)
+                    )
                 }
             } catch (e: Exception) {
-
+                _uiState.value = _uiState.value.copy(
+                    result = Result.Error("Failed to fetch modules: ${e.message}")
+                )
             }
         }
     }
