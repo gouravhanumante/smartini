@@ -33,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -40,6 +41,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.dailyrounds.quizapp.data.Question
 import com.dailyrounds.quizapp.ui.components.BackButton
+import com.dailyrounds.quizapp.ui.components.ConfirmationDialog
 import com.dailyrounds.quizapp.ui.components.Timer
 import com.dailyrounds.quizapp.ui.theme.AppTheme
 import com.dailyrounds.quizapp.viewmodel.QuestionViewModel
@@ -85,6 +88,15 @@ fun QuizScreen(
     var countdown by remember { mutableIntStateOf(0) }
     var dragDistance by remember { mutableFloatStateOf(0f) }
     val swipeThreshold = 150f
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        if (!uiState.answerShown) {
+            showExitDialog = true
+        } else {
+            onBackClick?.invoke()
+        }
+    }
 
     LaunchedEffect(uiState.selectedAnswer) {
         if (uiState.selectedAnswer != null && uiState.answerShown) {
@@ -116,7 +128,13 @@ fun QuizScreen(
         ) {
             if (onBackClick != null) {
                 BackButton(
-                    onBackClick = onBackClick,
+                    onBackClick = {
+                        if (!uiState.answerShown) {
+                            showExitDialog = true
+                        } else {
+                            onBackClick()
+                        }
+                    },
                     text = "Back to Modules"
                 )
             }
@@ -316,6 +334,21 @@ fun QuizScreen(
         StreakOverlay(
             currentStreak = uiState.currentStreak,
             previousStreak = uiState.previousStreak
+        )
+    }
+    if (showExitDialog) {
+        ConfirmationDialog(
+            title = "Exit Quiz?",
+            message = "Your progress will be lost if you exit now. Are you sure you want to leave?",
+            icon = Icons.Filled.Warning,
+            confirmText = "Exit",
+            dismissText = "Stay",
+            onConfirm = {
+                onBackClick?.invoke()
+            },
+            onDismiss = {
+                showExitDialog = false
+            }
         )
     }
 }
