@@ -92,6 +92,17 @@ fun QuizNavigation(
                             inclusive = true
                         }
                     }
+                },
+                onRetakeQuiz = {
+                    val selectedModule = modulesViewModel.uiState.value.selectedModule
+                    selectedModule?.let { module ->
+                        questionViewModel.retakeQuiz(module.id, module.questions_url)
+                        navController.navigate(QuizRoutes.MAIN_PAGE) {
+                            popUpTo(QuizRoutes.RESULT_SCREEN) {
+                                inclusive = true
+                            }
+                        }
+                    }
                 }
             )
         }

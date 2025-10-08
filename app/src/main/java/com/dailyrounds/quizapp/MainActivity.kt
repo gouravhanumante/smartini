@@ -73,11 +73,19 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(moduleUIState.selectedModule) {
+                LaunchedEffect(moduleUIState.selectedModule, moduleUIState.isRetake) {
                     val selected = moduleUIState.selectedModule
                     if (selected != null) {
                         val completion = modulesRepository.fetchCompletionStatus(selected.id)
-                        if (completion?.isCompleted == true) {
+                        
+                        if (moduleUIState.isRetake) {
+                            viewModel.retakeQuiz(selected.id, selected.questions_url)
+                            navController.navigate("main_page") {
+                                launchSingleTop = true
+                            }
+                            moduleViewModel.clearSelection()
+                        } 
+                        else if (completion?.isCompleted == true) {
                             viewModel.setPreviousResults(
                                 score = completion.previousScore,
                                 totalQuestions = completion.totalQuestions,
@@ -88,7 +96,8 @@ class MainActivity : ComponentActivity() {
                                 launchSingleTop = true
                             }
                             moduleViewModel.clearSelection()
-                        } else {
+                        } 
+                        else {
                             viewModel.loadQuestionsforModule(
                                 selected.id,
                                 selected.questions_url

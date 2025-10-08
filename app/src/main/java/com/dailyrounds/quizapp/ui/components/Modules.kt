@@ -142,23 +142,59 @@ fun ModuleItem(
                 }
             }
             
-            if (isCompleted && score > 0) {
+            if (isCompleted) {
+                val totalQuestions = dbModuleData.value?.totalQuestions ?: 0
                 Text(
-                    text = "Previous Score: $score",
+                    text = "Previous Score: $score/$totalQuestions",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
             }
             
-                val buttonText = if (isCompleted) "Review Results" else "Start Quiz"
+            Text(
+                text = module.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isCompleted) {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                },
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+            )
+            
+            if (isCompleted) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            moduleViewModel.selectModule(module, isRetake = false)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "Results")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            moduleViewModel.selectModule(module, isRetake = true)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "Retake")
+                    }
+                }
+            } else {
                 OutlinedButton(
                     onClick = {
-                        moduleViewModel.selectModule(module)
+                        moduleViewModel.selectModule(module, isRetake = false)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = buttonText)
+                    Text(text = "Start Quiz")
                 }
+            }
         }
     }
 }
