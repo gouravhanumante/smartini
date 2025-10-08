@@ -5,5 +5,6 @@ import com.dailyrounds.quizapp.network.Result
 
 data class ModuleUIState(
     val result: Result<List<Module>> = Result.Loading,
-    val selectedModule: Module? = null
+    val selectedModule: Module? = null,
+    val isRetake: Boolean = false
 )

@@ -243,6 +243,18 @@ class QuestionViewModel @Inject constructor(
         )
     }
 
+    fun retakeQuiz(moduleId: String, questionsUrl: String) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    moduleDao.clearModuleData(moduleId)
+                }
+                loadQuestionsforModule(moduleId, questionsUrl)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
     fun loadQuestionsforModule(moduleId: String, questionsUrl: String) {
         viewModelScope.launch {
             stopTimer()

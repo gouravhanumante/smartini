@@ -14,4 +14,10 @@ interface ModuleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveModuleData(moduleEntity: ModuleEntity)
 
+    @Query("DELETE FROM modules_table WHERE moduleId = :moduleId")
+    suspend fun clearModuleData(moduleId: String)
+
+    @Query("SELECT * FROM modules_table")
+    suspend fun getAllModules(): List<ModuleEntity>
+
 }

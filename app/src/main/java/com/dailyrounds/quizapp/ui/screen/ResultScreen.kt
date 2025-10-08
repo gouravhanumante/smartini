@@ -46,6 +46,7 @@ fun ResultScreen(
     selectedTheme: AppTheme,
     onRestartQuiz: () -> Unit,
     onHome: () -> Unit,
+    onRetakeQuiz: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -96,30 +97,40 @@ fun ResultScreen(
         )
         Spacer(Modifier.weight(1f))
         
+        ButtonStore.SecondaryButton(
+            text = "Share Result",
+            onClick = {
+                android.util.Log.d("ResultScreen", "Share button clicked, cardWidthPx: $cardWidthPx")
+                try {
+                    ScreenshotUtil.captureAndShareComposable(
+                        context = context,
+                        widthPx = cardWidthPx
+                    ) {
+                        QuizAppTheme(selectedTheme, darkTheme = false, dynamicColor = false) {
+                            resultCardContent()
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("ResultScreen", "Error in share button", e)
+                    android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(Modifier.height(12.dp))
+        
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ButtonStore.SecondaryButton(
-                text = "Share Result",
-                onClick = {
-                    android.util.Log.d("ResultScreen", "Share button clicked, cardWidthPx: $cardWidthPx")
-                    try {
-                        ScreenshotUtil.captureAndShareComposable(
-                            context = context,
-                            widthPx = cardWidthPx
-                        ) {
-                            QuizAppTheme(selectedTheme, darkTheme = false, dynamicColor = false) {
-                                resultCardContent()
-                            }
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e("ResultScreen", "Error in share button", e)
-                        android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            )
+            if (onRetakeQuiz != null) {
+                ButtonStore.SecondaryButton(
+                    text = "Retake Quiz",
+                    onClick = onRetakeQuiz,
+                    modifier = Modifier.weight(1f)
+                )
+            }
             
             ButtonStore.PrimaryButton(
                 text = "Go To Home",

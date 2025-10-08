@@ -45,15 +45,17 @@ class ModulesViewModel @Inject constructor(private val repository: ModulesReposi
         }
     }
 
-    fun selectModule(module: Module) {
+    fun selectModule(module: Module, isRetake: Boolean = false) {
         _uiState.value = _uiState.value.copy(
-            selectedModule = module
+            selectedModule = module,
+            isRetake = isRetake
         )
     }
 
     fun clearSelection() {
         _uiState.value = _uiState.value.copy(
-            selectedModule = null
+            selectedModule = null,
+            isRetake = false
         )
     }
 
